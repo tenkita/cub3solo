@@ -17,13 +17,18 @@ void	free_map(char **map)
 	free(map);
 }
 
-void	clean_config(t_config *config)
+void	free_texture(t_config *config)
 {
 	free(config->texture_no);
 	free(config->texture_so);
 	free(config->texture_we);
 	free(config->texture_ea);
-    free_map(config->map);
+}
+
+void	clean_config(t_config *config)
+{
+	free_texture(config);
+	free_map(config->map);
 }
 
 int	main(int ac, char *av[])

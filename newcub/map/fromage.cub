@@ -1,12 +1,14 @@
+
+
+
+
+F 31,92,59
+C   2 , 5, 1
+
+
+
 NO textures/simonkraft/wet_sponge.xpm
 SO textures/simonkraft/wet_sponge.xpm
-WE textures/simonkraft/wet_sponge.xpm
-EA textures/simonkraft/wet_sponge.xpm
-
-F 31,92,55
-C 122,33,t3
-
-
 
 
 111111111111111111111
@@ -24,11 +26,12 @@ C 122,33,t3
 111111101011111011101
 100000101000100010001
 101110101110101110111
-101000100000100010101
+101000100000000010101
 101011111111111010101
 100010000000000010001
 101010111011111111101
 1N1000001000000000001
 111111111111111111111
 
-
+WE textures/simonkraft/wet_sponge.xpm
+EA textures/simonkraft/wet_sponge.xpm

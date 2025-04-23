@@ -6,13 +6,15 @@
 /*   By: tkitago <tkitago@student.42tokyo.jp>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 13:01:38 by tkitago           #+#    #+#             */
-/*   Updated: 2025/04/23 19:21:57 by tkitago          ###   ########.fr       */
+/*   Updated: 2025/04/23 21:37:04 by tkitago          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "cub3d.h"
 
 void		clean_config(t_config *config);
+void		free_map(char **map);
+void		free_texture(t_config *config);
 
 void	init_texture_color(t_config *config)
 {
@@ -52,70 +54,80 @@ int	is_color_line(char *line)
 	return (line[0] == 'F' || line[0] == 'C');
 }
 
+void	exit_parse_texture_error(t_config *config, char *line)
+{
+	free(line);
+	free_texture(config);
+	exit(put_error("Duplicate texture"));
+}
 void	parse_texture_line(t_config *config, char *line)
 {
 	if (!strncmp(line, "NO ", 3))
 	{
-		if (config->texture_no)
-			exit(put_error("Duplicate texture: NO"));
-		// config->texture_no = ft_strtrim(line + 3, " \n\t\r");
+		if (config->texture_no != NULL)
+			exit_parse_texture_error(config, line);
+		config->texture_no = ft_strtrim(line + 3, " \n\t\r");
 	}
 	else if (!strncmp(line, "SO ", 3))
 	{
 		if (config->texture_so)
-			exit(put_error("Duplicate texture: SO"));
-		// config->texture_so = ft_strtrim(line + 3, " \n\t\r");
+			exit_parse_texture_error(config, line);
+		config->texture_so = ft_strtrim(line + 3, " \n\t\r");
 	}
 	else if (!strncmp(line, "WE ", 3))
 	{
 		if (config->texture_we)
-			exit(put_error("Duplicate texture: WE"));
-		//	config->texture_we = ft_strtrim(line + 3, " \n\t\r");
+			exit_parse_texture_error(config, line);
+		config->texture_we = ft_strtrim(line + 3, " \n\t\r");
 	}
 	else if (!strncmp(line, "EA ", 3))
 	{
 		if (config->texture_ea)
-			exit(put_error("Duplicate texture: EA"));
-		// config->texture_ea = ft_strtrim(line + 3, " \n\t\r");
+			exit_parse_texture_error(config, line);
+		config->texture_ea = ft_strtrim(line + 3, " \n\t\r");
 	}
 }
+
 //スペース＆文字atoi
 
 int	atoi_check(const char *str)
 {
 	long long	res;
+	int			saw_digit;
 
 	res = 0;
+	saw_digit = 0;
 	while (*str == ' ' || (*str >= 9 && *str <= 13))
 		str++;
-	if (!('0' <= *str && *str <= '9'))
+	while (*str >= '0' && *str <= '9')
 	{
-		// printf("first char is not num\n");
-		return (-1);
-	}
-	// printf("before convert%s\n", str);
-	while (*str)
-	{
-		if (!('0' <= *str && *str <= '9'))
-		{
-			// printf("char is in str\n");
-			// printf("after convert%s\n", str);
-			return (-1);
-		}
+		saw_digit = 1;
 		res = res * 10 + (*str - '0');
 		if (res > INT_MAX)
 			return (-1);
 		str++;
 	}
+	if (!saw_digit)
+		return (-1);
+	while (*str == ' ' || (*str >= 9 && *str <= 13))
+		str++;
+	if (*str != '\0')
+		return (-1);
 	return ((int)res);
 }
 
-void	check_floor_ceiling(t_config *config, char id)
+void	check_floor_ceiling(t_config *config, char *line)
 {
-	if (id == 'F' && config->floor_color != -1)
+	if (line[0] == 'F' && config->floor_color != -1)
+	{
+		free(line);
 		exit(put_error("Duplicate floor color"));
-	if (id == 'C' && config->ceiling_color != -1)
+	}
+	if (line[0] == 'C' && config->ceiling_color != -1)
+	{
+		free(line);
 		exit(put_error("Duplicate ceiling color"));
+	}
 }
 
 char	**split_color(char *line)
@@ -129,7 +141,11 @@ char	**split_color(char *line)
 	while (split[count])
 		count++;
 	if (count != 3)
+	{
+		free(line);
+		free_2d(split);
 		exit(put_error("color format: R, G, B"));
+	}
 	return (split);
 }
 
@@ -141,7 +157,10 @@ void	validate_color(char **split)
 	while (i < 3)
 	{
 		if (!split[i] || !*split[i])
+		{
+			free_2d(split);
 			exit(put_error("invalid color format"));
+		}
 		i++;
 	}
 }
@@ -154,14 +173,19 @@ void	parse_color_line(t_config *config, char *line)
 	int		b;
 	int		color;
 
-	check_floor_ceiling(config, line[0]);
+	check_floor_ceiling(config, line);
 	split = split_color(line);
 	validate_color(split);
 	r = atoi_check(split[0]);
 	g = atoi_check(split[1]);
 	b = atoi_check(split[2]);
 	if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255)
+	{
+		free_2d(split);
+		free(line);
+		free_texture(config);
 		exit(put_error("RGB is out of range"));
+	}
 	color = (r << 16) | (g << 8) | b;
 	if (line[0] == 'F')
 		config->floor_color = color;
@@ -230,6 +254,7 @@ void	parse_map_line(t_config *config, int fd, char *first_line)
 	map[count] = NULL;
 	config->map = map;
 	config->map_height = count;
+	// free_2d(map); //
 }
 
 int	find_max_len(t_config *config)
@@ -429,13 +454,16 @@ void	init_player(t_config *config)
 	}
 }
 
-// void	check_color(t_config *config)
-// {
-// 	if (!config->texture_no || !config->texture_so || !config->texture_we
-// 		|| !config->texture_ea || config->floor_color == -1
-// 		|| config->ceiling_color == -1)
-// 		exit(put_error("Missing element in .cub file"));
-// }
+void	check_color(t_config *config)
+{
+	if (!config->texture_no || !config->texture_so || !config->texture_we
+		|| !config->texture_ea || config->floor_color == -1
+		|| config->ceiling_color == -1)
+	{
+		clean_config(config);
+		exit(put_error("Missing element in .cub file"));
+	}
+}
 
 t_config	parse_map(char *file)
 {
@@ -461,15 +489,19 @@ t_config	parse_map(char *file)
 				normalize_map(&config);
 				// mapのながさが違うときどう対処する
 				if (valid_map(config.map) == MAP_IS_INVALID)
+				{
+					free(line);
+					clean_config(&config);
 					exit(EXIT_FAILURE);
+				}
 				init_player(&config);
-				break ;
+				// break ;
 			}
 		}
 		free(line);
 	}
 	free(line);
-	// check_color(&config);
+	check_color(&config);
 	return (config);
 }
 
