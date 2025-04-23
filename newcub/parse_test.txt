@@ -1,0 +1,42 @@
+
+要素の重複→OK
+NO textures/wall.xpm
+NO textures/another_wall.xpm
+
+RGBの範囲外エラー→OK
+F 256,100,100
+C 120,255,-3
+
+RGBが不足 or 書式ミス
+F 100,50
+→弾けてる
+F 100,50,
+→OK
+
+マップ中に不正な文字→OK
+111111
+1X0N11
+111111
+
+プレイヤーの重複 or 不在→OK
+1N0S1
+
+マップが閉じていないOK?ここもっとエッジケース確認
+111111
+1N0 11
+111111
+
+ 要素が足りていない（テクスチャや色）OK
+NO textures/no.xpm
+WE textures/we.xpm
+F 220,220,220
+
+要素の順番がバラバラでもOK
+よくわからん
+F 100,100,100
+NO textures/wall.xpm
+1N011
+11111
+SO textures/...
+C 200,200,200
+...
